@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import RuleAssistant from "./RuleAssistant";
 import { 
   Bell, Check, ShieldCheck, FileText, Sun, Moon, 
   LogOut, LogIn, Search, ChevronRight, AlertCircle, 
@@ -11,19 +12,19 @@ import {
 export default function Dashboard() {
   const [darkMode, setDarkMode] = useState(true);
   
-  // BYPASS: Start directly in 'officer' view instead of 'login'
-  const [currentView, setCurrentView] = useState('officer');
+  // Start at the sign-in screen so the user can choose a role.
+  const [currentView, setCurrentView] = useState<'login' | 'citizen' | 'officer' | 'apply'>('login');
   
   // Login Tab State
   const [loginTab, setLoginTab] = useState('officer'); 
 
-  // BYPASS: Pre-fill the Sarah Chen mock officer profile
-  const [currentUser, setCurrentUser] = useState({
-    name: 'Officer Sarah Chen',
-    id: 'BSYNC-9942',
-    role: 'Senior Permit & Underwriting Officer',
-    type: 'officer'
-  });
+  // The officer demo profile is set after sign-in.
+  const [currentUser, setCurrentUser] = useState<{
+    name: string;
+    id: string;
+    role: string;
+    type: string;
+  } | null>(null);
 
   // Login form inputs
   const [inputId, setInputId] = useState('');
@@ -86,7 +87,12 @@ export default function Dashboard() {
     }
   ]);
 
-  const [applyForm, setApplyForm] = useState({
+  const [applyForm, setApplyForm] = useState<{
+    permitType: string;
+    aadhaarName: string;
+    aadhaarNumber: string;
+    files: Array<{ name: string; size: string; verified: boolean }>;
+  }>({
     permitType: 'Residential Rooftop',
     aadhaarName: '',
     aadhaarNumber: '',
@@ -94,11 +100,15 @@ export default function Dashboard() {
   });
 
   const [showNotifications, setShowNotifications] = useState(false);
-  const notificationRef = useRef(null);
+  const notificationRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        notificationRef.current &&
+        event.target instanceof Node &&
+        !notificationRef.current.contains(event.target)
+      ) {
         setShowNotifications(false);
       }
     };
@@ -108,7 +118,7 @@ export default function Dashboard() {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  const handleLogin = (e) => {
+  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!inputId.trim() || !inputPassword.trim()) {
       setLoginError('Please enter valid credentials.');
@@ -142,8 +152,9 @@ export default function Dashboard() {
     setInputPassword('');
   };
 
-  const handleApplySubmit = (e) => {
+  const handleApplySubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!currentUser) return;
     
     const newPermitId = `PRM-2026-${Math.floor(Math.random() * 1000) + 9000}`;
     const maskedAadhaar = '[Aadhaar Redacted]';
@@ -534,6 +545,8 @@ export default function Dashboard() {
               ))
             )}
           </div>
+
+          <RuleAssistant role="citizen" darkMode={darkMode} />
         </main>
       </div>
     );
@@ -686,6 +699,7 @@ export default function Dashboard() {
             </div>
 
           </div>
+          <RuleAssistant role="officer" darkMode={darkMode} />
         </div>
 
       </main>
